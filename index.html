@@ -1,0 +1,974 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>金属プレス 見積もりシステム v5</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700;900&family=Bebas+Neue&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0b0f1a;--s1:#111827;--s2:#1a2236;--s3:#202840;
+  --bd:#263050;--bd2:#374070;
+  --gold:#c8940c;--gold2:#f0b429;
+  --blue:#2563eb;--blue2:#3b82f6;
+  --teal2:#14b8a6;
+  --red:#dc2626;--red2:#ef4444;
+  --green:#16a34a;--green2:#22c55e;
+  --purple:#7c3aed;--purple2:#a855f7;
+  --orange2:#f97316;
+  --yellow2:#f59e0b;
+  --txt:#d4dff5;--txt2:#7a8fb0;--txt3:#3a4870;
+  --mono:'JetBrains Mono',monospace;
+  --disp:'Bebas Neue',sans-serif;
+  --sans:'Noto Sans JP',sans-serif;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:var(--sans);background:var(--bg);color:var(--txt);min-height:100vh;font-size:13px;}
+
+nav{display:flex;align-items:stretch;height:50px;background:var(--s1);border-bottom:1px solid var(--bd);position:sticky;top:0;z-index:500;}
+.brand{font-family:var(--disp);font-size:22px;letter-spacing:.1em;color:var(--gold2);padding:0 18px;display:flex;align-items:center;border-right:1px solid var(--bd);flex-shrink:0;gap:6px;}
+.brand-ver{font-size:10px;color:var(--txt2);font-family:var(--mono);margin-top:4px;}
+.nav-tabs{display:flex;flex:1;}
+.ntab{display:flex;align-items:center;gap:5px;padding:0 14px;cursor:pointer;font-size:11px;letter-spacing:.05em;color:var(--txt2);border:none;background:none;border-bottom:2px solid transparent;transition:all .15s;white-space:nowrap;font-family:var(--sans);}
+.ntab:hover{color:var(--txt);background:var(--s2);}
+.ntab.active{color:var(--gold2);border-bottom-color:var(--gold2);background:var(--s2);}
+.ndot{width:6px;height:6px;border-radius:50%;flex-shrink:0;}
+.nav-right{display:flex;align-items:center;gap:8px;padding:0 12px;border-left:1px solid var(--bd);}
+.user-chip{display:flex;align-items:center;gap:6px;padding:4px 10px;background:var(--s2);border:1px solid var(--bd);border-radius:3px;font-size:11px;cursor:pointer;transition:border-color .15s;}
+.user-chip:hover{border-color:var(--gold);}
+.user-avatar{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;}
+
+.page{display:none;height:calc(100vh - 50px);overflow:hidden;}
+.page.active{display:flex;}
+
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:600;align-items:center;justify-content:center;}
+.modal-overlay.open{display:flex;}
+.modal{background:var(--s1);border:1px solid var(--bd2);border-radius:8px;padding:26px;width:460px;max-width:92vw;animation:mIn .18s ease;}
+@keyframes mIn{from{opacity:0;transform:scale(.95)}to{opacity:1;transform:scale(1)}}
+.modal h2{font-size:15px;font-weight:700;margin-bottom:14px;}
+.modal-actions{display:flex;gap:8px;margin-top:18px;justify-content:flex-end;}
+
+.card{background:var(--s1);border:1px solid var(--bd);border-radius:5px;margin-bottom:12px;overflow:hidden;}
+.ch{display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--s2);border-bottom:1px solid var(--bd);}
+.ci{width:24px;height:24px;border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0;}
+.ch h2{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--txt2);font-weight:600;}
+.ch .cnt{margin-left:auto;font-family:var(--mono);font-size:10px;color:var(--txt2);background:var(--s3);padding:2px 7px;border-radius:2px;}
+.cb{padding:12px 14px;}
+
+.pane{overflow-y:auto;padding:18px;border-right:1px solid var(--bd);}
+.pane:last-child{border-right:none;}
+.two-col{display:grid;grid-template-columns:1fr 1fr;width:100%;overflow:hidden;}
+.three-col{display:grid;grid-template-columns:1fr 1fr 1fr;width:100%;overflow:hidden;}
+.quote-layout{display:flex;width:100%;overflow:hidden;}
+.quote-main{flex:1;overflow-y:auto;padding:18px 22px;}
+.quote-side{width:288px;flex-shrink:0;background:var(--s1);border-left:1px solid var(--bd);display:flex;flex-direction:column;gap:10px;padding:14px;overflow-y:auto;}
+
+.fg{display:grid;gap:9px;}
+.fg2{grid-template-columns:1fr 1fr;}
+.fg3{grid-template-columns:1fr 1fr 1fr;}
+.fg4{grid-template-columns:1fr 1fr 1fr 1fr;}
+.fgf{grid-column:1/-1;}
+.field{display:flex;flex-direction:column;gap:4px;}
+.lbl{font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--txt2);font-weight:600;}
+input[type=text],input[type=number],input[type=date],input[type=password],select,textarea{
+  background:var(--bg);border:1px solid var(--bd);border-radius:3px;
+  color:var(--txt);font-family:var(--mono);font-size:12px;
+  padding:6px 8px;width:100%;outline:none;
+  transition:border-color .15s,box-shadow .15s;-webkit-appearance:none;appearance:none;
+}
+input:focus,select:focus,textarea:focus{border-color:var(--gold);box-shadow:0 0 0 2px rgba(200,148,12,.15);}
+select option{background:var(--s2);}
+.uf{position:relative;}
+.uf input{padding-right:32px;}
+.uf .u{position:absolute;right:7px;top:50%;transform:translateY(-50%);font-size:9px;color:var(--txt2);pointer-events:none;font-family:var(--mono);}
+
+.btn{display:inline-flex;align-items:center;gap:5px;border:none;border-radius:3px;cursor:pointer;font-family:var(--sans);font-size:12px;padding:7px 13px;transition:all .15s;font-weight:500;white-space:nowrap;}
+.btn-gold{background:var(--gold);color:#000;font-weight:700;}
+.btn-gold:hover{background:var(--gold2);}
+.btn-sm{padding:4px 9px;font-size:11px;}
+.btn-ghost{background:none;border:1px solid var(--bd2);color:var(--txt2);}
+.btn-ghost:hover{border-color:var(--gold);color:var(--gold);}
+.btn-green{background:var(--green);color:#fff;font-weight:700;}
+.btn-green:hover{background:var(--green2);}
+.btn-red{background:var(--red);color:#fff;font-weight:700;}
+.btn-red:hover{background:var(--red2);}
+.btn-blue{background:var(--blue);color:#fff;font-weight:700;}
+.btn-blue:hover{background:var(--blue2);}
+.btn-danger{background:none;border:1px solid transparent;color:var(--red2);width:24px;height:24px;padding:0;display:flex;align-items:center;justify-content:center;border-radius:3px;cursor:pointer;}
+.btn-danger:hover{background:rgba(220,38,38,.12);border-color:var(--red2);}
+.btn-add{width:100%;padding:6px;margin-top:5px;background:none;border:1px dashed var(--bd2);border-radius:3px;color:var(--txt2);cursor:pointer;font-size:11px;font-family:var(--sans);transition:all .15s;}
+.btn-add:hover{border-color:var(--gold);color:var(--gold);}
+
+.tbl{width:100%;border-collapse:collapse;font-size:12px;}
+.tbl th{font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--txt2);padding:6px 8px;background:var(--bg);border-bottom:1px solid var(--bd);text-align:left;white-space:nowrap;}
+.tbl td{padding:5px 6px;border-bottom:1px solid rgba(255,255,255,.04);vertical-align:middle;}
+.tbl tr:last-child td{border-bottom:none;}
+.tbl tr:hover td{background:rgba(255,255,255,.012);}
+.tbl input,.tbl select{padding:4px 6px;font-size:11px;}
+
+.proc-row{background:var(--bg);border:1px solid var(--bd);border-radius:4px;padding:8px 10px;margin-bottom:5px;position:relative;transition:border-color .15s;}
+.proc-row:hover{border-color:var(--bd2);}
+.pgm{display:grid;grid-template-columns:20px 168px 1fr 88px 88px 74px 22px;gap:6px;align-items:end;}
+.pgo{display:grid;grid-template-columns:20px 168px 1fr 88px 74px 22px;gap:6px;align-items:end;}
+.proc-seq{width:20px;height:20px;border-radius:2px;background:var(--s3);border:1px solid var(--bd2);font-family:var(--mono);font-size:9px;color:var(--gold2);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.proc-tag{position:absolute;top:-1px;right:28px;font-size:8px;padding:1px 5px;border-radius:0 0 2px 2px;letter-spacing:.06em;font-family:var(--mono);}
+.proc-cost{font-family:var(--mono);font-size:12px;color:var(--gold2);text-align:right;padding:5px 4px;background:var(--s2);border:1px solid var(--bd);border-radius:3px;}
+
+.st-badge{display:inline-flex;align-items:center;gap:4px;padding:2px 7px;border-radius:2px;font-size:10px;font-weight:700;font-family:var(--mono);}
+.st-draft{background:#37415122;color:#94a3b8;border:1px solid #374151;}
+.st-pending{background:#d9770622;color:#f59e0b;border:1px solid #d97706;}
+.st-approved{background:#16a34a22;color:#22c55e;border:1px solid #16a34a;}
+.st-rejected{background:#dc262622;color:#ef4444;border:1px solid #dc2626;}
+.st-sent{background:#2563eb22;color:#60a5fa;border:1px solid #2563eb;}
+.st-ordered{background:#7c3aed22;color:#a855f7;border:1px solid #7c3aed;}
+.st-lost{background:#37415133;color:#6b7280;border:1px solid #374151;}
+
+.dash-wrap{display:flex;flex-direction:column;overflow-y:auto;padding:20px;gap:14px;width:100%;}
+.kpi-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;}
+.kpi{background:var(--s1);border:1px solid var(--bd);border-radius:5px;padding:14px;position:relative;overflow:hidden;}
+.kpi-lbl{font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--txt2);margin-bottom:5px;}
+.kpi-val{font-family:var(--disp);font-size:28px;color:var(--txt);letter-spacing:.05em;line-height:1;}
+.kpi-sub{font-size:10px;color:var(--txt2);margin-top:2px;font-family:var(--mono);}
+
+.qli{background:var(--s1);border:1px solid var(--bd);border-radius:5px;padding:11px 13px;margin-bottom:7px;cursor:pointer;transition:border-color .15s,background .15s;display:grid;grid-template-columns:100px 1fr 88px 108px 100px 72px 78px 90px;gap:7px;align-items:center;}
+.qli:hover{border-color:var(--bd2);background:var(--s2);}
+.list-hdr{display:grid;grid-template-columns:100px 1fr 88px 108px 100px 72px 78px 90px;gap:7px;padding:5px 13px;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--txt3);}
+
+.cr{display:flex;justify-content:space-between;align-items:center;padding:3px 0;border-bottom:1px solid rgba(255,255,255,.04);font-size:12px;}
+.cr:last-child{border-bottom:none;}
+.cl{color:var(--txt2);}
+.cv{font-family:var(--mono);color:var(--txt);}
+.cv.hi{color:var(--gold2);}
+.cv.hig{color:var(--green2);}
+.cv.hit{color:var(--teal2);}
+
+.bar-wrap{display:flex;flex-direction:column;gap:4px;}
+.bar-row{display:flex;align-items:center;gap:5px;}
+.bar-lbl{font-size:9px;color:var(--txt2);width:44px;flex-shrink:0;}
+.bar-track{flex:1;height:4px;background:var(--bd);border-radius:3px;overflow:hidden;}
+.bar-fill{height:100%;border-radius:3px;transition:width .4s;}
+.bar-pct{font-family:var(--mono);font-size:9px;color:var(--txt2);width:28px;text-align:right;}
+.bar-val{font-family:var(--mono);font-size:9px;color:var(--txt2);width:56px;text-align:right;}
+.cost-stack{display:flex;height:13px;border-radius:2px;overflow:hidden;gap:1px;margin:5px 0;}
+.stk{height:100%;transition:width .4s;}
+
+.total-box{background:linear-gradient(135deg,rgba(200,148,12,.14),rgba(200,148,12,.04));border:1px solid var(--gold);border-radius:5px;padding:13px 11px;text-align:center;}
+.total-lbl{font-size:9px;letter-spacing:.2em;text-transform:uppercase;color:var(--gold);margin-bottom:3px;}
+.total-yen{font-family:var(--disp);font-size:28px;color:var(--gold2);letter-spacing:.04em;line-height:1;}
+.total-unit{font-family:var(--mono);font-size:10px;color:var(--txt2);margin-top:3px;}
+
+.gauge-wrap{display:flex;align-items:center;gap:7px;padding:7px;background:var(--bg);border:1px solid var(--bd);border-radius:3px;}
+.gauge-track{flex:1;height:6px;background:var(--bd);border-radius:3px;overflow:hidden;}
+.gauge-fill{height:100%;border-radius:3px;transition:width .4s,background .4s;}
+.gauge-val{font-family:var(--mono);font-size:12px;font-weight:600;width:34px;text-align:right;}
+
+input[type=range]{flex:1;-webkit-appearance:none;height:4px;background:var(--bd);border:none;border-radius:2px;padding:0;box-shadow:none;}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;background:var(--gold);border-radius:50%;cursor:pointer;box-shadow:0 0 5px rgba(200,148,12,.4);}
+.slider-row{display:flex;align-items:center;gap:8px;}
+.slider-val{font-family:var(--mono);font-size:13px;color:var(--gold2);width:34px;text-align:right;}
+
+.sdiv{font-size:9px;letter-spacing:.15em;text-transform:uppercase;color:var(--txt2);padding-bottom:5px;border-bottom:1px solid var(--bd);margin-bottom:8px;}
+
+.email-box{background:var(--bg);border:1px solid var(--bd);border-radius:4px;padding:12px;font-size:11px;line-height:1.9;white-space:pre-wrap;font-family:var(--mono);color:var(--txt2);max-height:280px;overflow-y:auto;}
+
+#print-area{display:none;}
+@media print{
+  body>*:not(#print-area){display:none!important;}
+  #print-area{display:block;font-family:'Noto Sans JP',sans-serif;color:#000;padding:12mm 18mm;}
+  table{width:100%;border-collapse:collapse;font-size:11px;margin-bottom:11px;}
+  th{background:#f3f4f6;padding:4px 7px;border:1px solid #ccc;text-align:left;}
+  td{padding:4px 7px;border:1px solid #ddd;}
+  .r{text-align:right;font-family:monospace;}
+  h2{font-size:18px;font-weight:900;padding-bottom:5px;margin-bottom:8px;border-bottom:3px solid;}
+  .meta{font-size:10px;color:#555;margin-bottom:10px;line-height:1.8;}
+  .note{font-size:10px;color:#888;margin-top:8px;}
+  .tr{font-weight:900;background:#f9fafb;}
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="brand">PRESS·EST <span class="brand-ver">v5</span></div>
+  <div class="nav-tabs">
+    <button class="ntab active" onclick="goPage('dash',this)"><span class="ndot" style="background:#22c55e"></span>ダッシュボード</button>
+    <button class="ntab" onclick="goPage('master',this)"><span class="ndot" style="background:var(--blue2)"></span>マスタ管理</button>
+    <button class="ntab" onclick="goPage('quote',this)"><span class="ndot" style="background:var(--gold2)"></span>見積もり作成</button>
+    <button class="ntab" onclick="goPage('output',this)"><span class="ndot" style="background:var(--green2)"></span>書類・承認</button>
+  </div>
+  <div class="nav-right">
+    <div class="user-chip" onclick="openLoginModal()">
+      <div class="user-avatar" id="nav-avatar" style="background:#2563eb22;color:var(--blue2)">営</div>
+      <span id="nav-uname" style="font-size:11px">山田 太郎</span>
+      <span id="nav-role" style="font-size:9px;color:var(--txt2)">営業</span>
+    </div>
+    <button class="btn btn-gold btn-sm" onclick="newQuote()">＋ 新規見積もり</button>
+  </div>
+</nav>
+
+<!-- ══ DASHBOARD ══ -->
+<div id="page-dash" class="page active">
+<div class="dash-wrap">
+  <div class="kpi-grid">
+    <div class="kpi"><div style="position:absolute;top:0;left:0;right:0;height:2px;background:var(--gold2)"></div><div class="kpi-lbl">見積もり件数</div><div class="kpi-val" id="kpi-cnt">0</div><div class="kpi-sub">件（全期間）</div></div>
+    <div class="kpi"><div style="position:absolute;top:0;left:0;right:0;height:2px;background:var(--blue2)"></div><div class="kpi-lbl">見積もり総額</div><div class="kpi-val" id="kpi-total" style="font-size:18px">¥0</div><div class="kpi-sub">税抜合計</div></div>
+    <div class="kpi"><div style="position:absolute;top:0;left:0;right:0;height:2px;background:var(--yellow2)"></div><div class="kpi-lbl">承認待ち</div><div class="kpi-val" id="kpi-pending" style="color:var(--yellow2)">0</div><div class="kpi-sub">件</div></div>
+    <div class="kpi"><div style="position:absolute;top:0;left:0;right:0;height:2px;background:var(--green2)"></div><div class="kpi-lbl">承認済み</div><div class="kpi-val" id="kpi-approved" style="color:var(--green2)">0</div><div class="kpi-sub">件</div></div>
+    <div class="kpi"><div style="position:absolute;top:0;left:0;right:0;height:2px;background:var(--red2)"></div><div class="kpi-lbl">差戻し</div><div class="kpi-val" id="kpi-rejected" style="color:var(--red2)">0</div><div class="kpi-sub">件</div></div>
+  </div>
+  <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+    <span style="font-size:11px;color:var(--txt2)">絞り込み：</span>
+    <select id="f-status" onchange="renderList()" style="width:120px;padding:5px 8px;font-size:11px"><option value="">すべて</option><option value="draft">下書き</option><option value="pending">承認待ち</option><option value="approved">承認済み</option><option value="rejected">差戻し</option><option value="sent">顧客送付済</option><option value="ordered">受注</option><option value="lost">失注</option></select>
+    <select id="f-staff" onchange="renderList()" style="width:120px;padding:5px 8px;font-size:11px"><option value="">全担当者</option></select>
+    <input type="text" id="f-search" placeholder="顧客名・品番で検索..." style="width:190px;padding:5px 8px;font-size:11px" oninput="renderList()">
+    <span style="margin-left:auto;font-size:11px;color:var(--txt2)" id="list-cnt"></span>
+  </div>
+  <div>
+    <div class="list-hdr"><span>見積No.</span><span>品番 / 顧客</span><span>担当</span><span>見積日</span><span>金額（税抜）</span><span>利益率</span><span>承認状況</span><span>操作</span></div>
+    <div id="quoteList"></div>
+  </div>
+</div>
+</div>
+
+<!-- ══ MASTER ══ -->
+<div id="page-master" class="page">
+<div class="two-col">
+  <div class="pane">
+    <div class="card">
+      <div class="ch"><div class="ci" style="background:#2563eb22;color:var(--blue2)">🔧</div><h2>機械マスタ</h2><span class="cnt" id="mcnt">0台</span><button class="btn btn-ghost btn-sm" style="margin-left:8px" onclick="addMachine()">＋ 追加</button></div>
+      <div style="padding:0"><table class="tbl"><thead><tr><th>機械名</th><th>種別</th><th style="width:130px">チャージ（円/h）</th><th style="width:26px"></th></tr></thead><tbody id="machBody"></tbody></table><div style="padding:6px 12px"><button class="btn-add" onclick="addMachine()">＋ 機械を追加</button></div></div>
+    </div>
+    <div style="font-size:11px;color:var(--txt2);line-height:2;padding:4px 2px">💡 <b style="color:var(--txt)">時間チャージ（円/h）</b>をここで登録。<b style="color:var(--gold2)">時間出来高（個/h）</b>は見積もり時に都度手入力。</div>
+  </div>
+  <div class="pane">
+    <div class="card">
+      <div class="ch"><div class="ci" style="background:#7c3aed22;color:var(--purple2)">🏢</div><h2>外注工程マスタ</h2><span class="cnt" id="ocnt">0件</span><button class="btn btn-ghost btn-sm" style="margin-left:8px" onclick="addOutsource()">＋ 追加</button></div>
+      <div style="padding:0"><table class="tbl"><thead><tr><th>工程名</th><th>種別</th><th>単価種別</th><th style="width:110px">単価</th><th style="width:26px"></th></tr></thead><tbody id="outBody"></tbody></table><div style="padding:6px 12px"><button class="btn-add" onclick="addOutsource()">＋ 外注工程を追加</button></div></div>
+    </div>
+    <div class="card">
+      <div class="ch"><div class="ci" style="background:#ea580c22;color:var(--orange2)">⚙️</div><h2>管理費・利益・ユーザー設定</h2></div>
+      <div class="cb">
+        <div class="fg fg3" style="gap:10px;margin-bottom:12px">
+          <div class="field"><label class="lbl">管理費率（%）</label><div class="uf"><input type="number" id="mgmt-rate" value="15" min="0" max="100" oninput="calcAll()"><span class="u">%</span></div></div>
+          <div class="field"><label class="lbl">目標利益率（%）</label><div class="uf"><input type="number" id="target-profit" value="20" min="0" max="100"><span class="u">%</span></div></div>
+          <div class="field"><label class="lbl">消費税率（%）</label><div class="uf"><input type="number" id="tax-rate" value="10" min="0" oninput="calcAll()"><span class="u">%</span></div></div>
+        </div>
+        <div style="border-top:1px solid var(--bd);padding-top:10px">
+          <div class="lbl" style="margin-bottom:7px">ユーザー管理（社内ログイン）</div>
+          <div style="font-size:10px;color:var(--txt2);margin-bottom:6px;line-height:1.7">
+            🔑 <b style="color:var(--gold2)">上司（承認権限）</b>ロールのユーザーが承認・差戻し操作を行えます。<br>
+            　 営業ロールはメール文面生成・書類出力・ステータス確認のみ可能です。
+          </div>
+          <div id="userList"></div>
+          <button class="btn-add" onclick="addUser()">＋ ユーザーを追加</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ══ QUOTE ══ -->
+<div id="page-quote" class="page">
+<div class="quote-layout">
+<div class="quote-main">
+
+  <div class="card">
+    <div class="ch"><div class="ci" style="background:#c8940c22;color:var(--gold2)">📋</div><h2>案件情報</h2><span class="cnt" id="q-id-disp" style="color:var(--gold2)">新規</span></div>
+    <div class="cb">
+      <div class="fg fg4" style="gap:9px">
+        <div class="field"><label class="lbl">顧客名</label><input type="text" id="q-cust" placeholder="株式会社○○" oninput="calcAll()"></div>
+        <div class="field"><label class="lbl">品番 / 品名</label><input type="text" id="q-part" placeholder="ABC-001 / ブラケット" oninput="calcAll()"></div>
+        <div class="field"><label class="lbl">数量</label><div class="uf"><input type="number" id="q-qty" value="1000" min="1" oninput="calcAll()"><span class="u">個</span></div></div>
+        <div class="field"><label class="lbl">担当者</label><select id="q-staff" onchange="calcAll()"><option value="">選択</option></select></div>
+        <div class="field"><label class="lbl">見積日</label><input type="date" id="q-date"></div>
+        <div class="field"><label class="lbl">有効期限</label><input type="date" id="q-expire"></div>
+        <div class="field"><label class="lbl">進捗ステータス</label>
+          <select id="q-progress"><option value="draft">下書き</option><option value="pending">承認待ち</option><option value="approved">承認済み</option><option value="rejected">差戻し</option><option value="sent">顧客送付済</option><option value="ordered">受注</option><option value="lost">失注</option></select>
+        </div>
+        <div class="field"><label class="lbl">備考</label><input type="text" id="q-note" placeholder="特記事項"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="ch"><div class="ci" style="background:#0d948822;color:var(--teal2)">🔩</div><h2>材料仕様</h2></div>
+    <div class="cb">
+      <div class="fg fg4" style="gap:9px">
+        <div class="field"><label class="lbl">材質</label><select id="mat-kind" onchange="syncMat()"><option value="SPCC">SPCC（冷延）</option><option value="SECC">SECC（電気Zn）</option><option value="SGCC">SGCC（溶融Zn）</option><option value="SUS304">SUS304</option><option value="SUS430">SUS430</option><option value="A5052">A5052（Al）</option><option value="C1100">C1100（銅）</option><option value="custom">その他</option></select></div>
+        <div class="field"><label class="lbl">板厚</label><select id="mat-t" onchange="calcAll()"><option value="0.5">0.5mm</option><option value="0.8">0.8mm</option><option value="1.0" selected>1.0mm</option><option value="1.2">1.2mm</option><option value="1.5">1.5mm</option><option value="2.0">2.0mm</option><option value="2.3">2.3mm</option><option value="3.2">3.2mm</option></select></div>
+        <div class="field"><label class="lbl">密度（g/cm³）</label><input type="number" id="mat-den" value="7.85" step="0.01" oninput="calcAll()"></div>
+        <div class="field"><label class="lbl">材料単価（円/kg）</label><div class="uf"><input type="number" id="mat-price" value="120" min="1" oninput="calcAll()"><span class="u">円/kg</span></div></div>
+        <div class="field"><label class="lbl">展開幅</label><div class="uf"><input type="number" id="mat-w" value="100" min="1" oninput="calcAll()"><span class="u">mm</span></div></div>
+        <div class="field"><label class="lbl">展開長さ</label><div class="uf"><input type="number" id="mat-l" value="150" min="1" oninput="calcAll()"><span class="u">mm</span></div></div>
+        <div class="field"><label class="lbl">歩留まり</label><div class="uf"><input type="number" id="mat-yld" value="75" min="10" max="100" oninput="calcAll()"><span class="u">%</span></div></div>
+        <div class="field"><label class="lbl">材料費/個（自動）</label><div style="background:var(--s2);border:1px solid var(--bd);border-radius:3px;padding:6px 8px;font-family:var(--mono);font-size:12px;color:var(--teal2)" id="mat-disp">¥ —</div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="ch"><div class="ci" style="background:#ea580c22;color:var(--orange2)">💰</div><h2>固定費</h2></div>
+    <div class="cb">
+      <div class="fg fg3" style="gap:9px">
+        <div class="field"><label class="lbl">金型費（合計）</label><div class="uf"><input type="number" id="q-die" value="0" min="0" oninput="calcAll()"><span class="u">円</span></div></div>
+        <div class="field"><label class="lbl">段取り費（合計）</label><div class="uf"><input type="number" id="q-setup" value="5000" min="0" oninput="calcAll()"><span class="u">円</span></div></div>
+        <div class="field"><label class="lbl">その他固定費</label><div class="uf"><input type="number" id="q-fixother" value="0" min="0" oninput="calcAll()"><span class="u">円</span></div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="ch"><div class="ci" style="background:#16a34a22;color:var(--green2)">🏭</div><h2>加工工程</h2>
+      <div style="margin-left:auto;display:flex;gap:5px">
+        <button class="btn btn-ghost btn-sm" onclick="addProc('machine')">＋ 機械工程</button>
+        <button class="btn btn-sm" style="background:none;border:1px solid var(--purple);color:var(--purple2)" onclick="addProc('outsource')">＋ 外注工程</button>
+      </div>
+    </div>
+    <div class="cb">
+      <div style="display:grid;grid-template-columns:20px 168px 1fr 88px 88px 74px 22px;gap:6px;padding:0 2px 5px;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--txt3)">
+        <span></span><span>機械 / 外注</span><span>工程名</span><span>出来高/h</span><span>時間/個(分)</span><span>費用/個</span><span></span>
+      </div>
+      <div id="procList"></div>
+      <div style="display:flex;gap:6px;margin-top:5px">
+        <button class="btn-add" style="flex:1" onclick="addProc('machine')">＋ 機械工程</button>
+        <button class="btn-add" style="flex:1;border-color:var(--purple);color:var(--purple2)" onclick="addProc('outsource')">＋ 外注工程</button>
+      </div>
+      <div style="margin-top:7px;padding:7px 9px;background:var(--bg);border:1px solid var(--bd);border-radius:3px;font-size:10px;color:var(--txt2);line-height:1.8">
+        機械：<b style="color:var(--gold2)">加工費/個 = チャージ（円/h）÷ 出来高（個/h）</b>　／　外注：単価 × 数量
+      </div>
+    </div>
+  </div>
+
+  <div style="display:flex;gap:8px;padding-bottom:20px">
+    <button class="btn btn-gold" style="flex:1;justify-content:center;font-size:14px" onclick="saveQuote()">💾 見積もりを保存</button>
+    <button class="btn btn-ghost" onclick="goPage('output',document.querySelector('.ntab:nth-child(4)'))">📄 書類・承認へ →</button>
+  </div>
+</div>
+
+<div class="quote-side">
+  <div class="sdiv">▶ リアルタイム原価分析</div>
+  <div>
+    <div style="font-size:9px;color:var(--txt2);margin-bottom:3px;letter-spacing:.1em;text-transform:uppercase">コスト構成</div>
+    <div class="cost-stack" id="cost-stack"></div>
+    <div class="bar-wrap" id="cost-bars"></div>
+  </div>
+  <div style="background:var(--bg);border:1px solid var(--bd);border-radius:4px;padding:10px">
+    <div style="font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--txt2);margin-bottom:6px">製造原価明細（1個）</div>
+    <div class="cr"><span class="cl">① 材料費</span><span class="cv hit" id="r-mat">¥—</span></div>
+    <div class="cr"><span class="cl">② 加工費</span><span class="cv hi" id="r-proc">¥—</span></div>
+    <div class="cr"><span class="cl">　外注費</span><span class="cv" style="font-size:10px;color:var(--purple2)" id="r-out">¥—</span></div>
+    <div class="cr"><span class="cl">③ 固定費/個</span><span class="cv" id="r-fix">¥—</span></div>
+    <div class="cr" style="border-top:1px solid var(--bd2);margin-top:3px;padding-top:3px"><span class="cl" style="font-weight:700;color:var(--txt)">直接原価</span><span class="cv hi" id="r-direct">¥—</span></div>
+    <div class="cr"><span class="cl">④ 管理費 <span id="r-mgr" style="font-size:9px;color:var(--txt2)"></span></span><span class="cv" id="r-mgmt">¥—</span></div>
+    <div class="cr" style="border-top:1px solid var(--bd2);margin-top:3px;padding-top:3px"><span class="cl" style="font-weight:700;color:var(--txt)">製造原価</span><span class="cv hi" id="r-mfg">¥—</span></div>
+  </div>
+  <div style="background:var(--bg);border:1px solid var(--bd);border-radius:4px;padding:10px">
+    <div style="font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--txt2);margin-bottom:6px">利益率</div>
+    <div class="slider-row" style="margin-bottom:5px"><input type="range" id="profit-slider" min="0" max="60" value="20" oninput="onSlider()"><span class="slider-val" id="profit-val">20%</span></div>
+    <div class="gauge-wrap"><div style="font-size:9px;color:var(--txt2);width:36px;flex-shrink:0">利益率</div><div class="gauge-track"><div class="gauge-fill" id="gauge-fill" style="width:20%;background:var(--green2)"></div></div><div class="gauge-val" id="gauge-val" style="color:var(--green2)">20%</div></div>
+    <div class="cr" style="margin-top:6px"><span class="cl">⑤ 利益/個</span><span class="cv hig" id="r-profit">¥—</span></div>
+  </div>
+  <div class="total-box">
+    <div class="total-lbl">見積もり金額（税抜）</div>
+    <div class="total-yen" id="r-final">¥ —</div>
+    <div class="total-unit" id="r-unit">単価 — 円 / 個</div>
+  </div>
+  <div style="background:var(--bg);border:1px solid var(--bd);border-radius:4px;padding:8px 10px">
+    <div class="cr"><span class="cl">消費税（<span id="r-taxr">10</span>%）</span><span class="cv" id="r-tax">¥—</span></div>
+    <div class="cr" style="border-top:1px solid var(--bd2);margin-top:3px;padding-top:3px"><span class="cl" style="font-weight:700;color:var(--txt)">税込合計</span><span class="cv hi" id="r-withtax">¥—</span></div>
+  </div>
+</div>
+</div>
+</div>
+
+<!-- ══ OUTPUT ══ -->
+<div id="page-output" class="page">
+<div class="three-col">
+
+  <!-- 顧客向け見積書 + メール -->
+  <div class="pane">
+    <div class="card">
+      <div class="ch"><div class="ci" style="background:#c8940c22;color:var(--gold2)">🧾</div><h2>① 顧客向け見積書</h2></div>
+      <div class="cb">
+        <div style="font-size:10px;color:var(--txt2);line-height:1.7;margin-bottom:8px">✅ 金額・品番・数量のみ表示　❌ 原価・利益・工程は<b style="color:var(--red2)">非表示</b></div>
+        <div id="prev-customer" style="background:var(--bg);border:1px solid var(--bd);border-radius:4px;padding:11px;font-size:11px;line-height:1.8"></div>
+        <button class="btn btn-gold" style="width:100%;justify-content:center;margin-top:8px" onclick="printDoc('customer')">🖨 顧客向け見積書を印刷</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="ch"><div class="ci" style="background:#2563eb22;color:var(--blue2)">📧</div><h2>上司への承認依頼メール</h2></div>
+      <div class="cb">
+        <div style="font-size:10px;color:var(--txt2);margin-bottom:7px">
+          以下の文面をコピーしてメールに貼り付け、<b style="color:var(--txt)">社内原価表PDFを添付</b>して送信してください。
+        </div>
+        <div class="email-box" id="email-body"></div>
+        <button class="btn btn-blue" style="width:100%;justify-content:center;margin-top:8px" onclick="copyEmail()">📋 メール文面をコピー</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 社内原価表 + 承認 -->
+  <div class="pane">
+    <div class="card">
+      <div class="ch"><div class="ci" style="background:#16a34a22;color:var(--green2)">🏭</div><h2>② 社内原価表</h2></div>
+      <div class="cb">
+        <div style="font-size:10px;color:var(--txt2);line-height:1.7;margin-bottom:7px">✅ 全原価明細・工程別・構成比　✅ 承認状況　対象：製造・品質・生産管理</div>
+        <div id="prev-internal" style="background:var(--bg);border:1px solid var(--bd);border-radius:4px;padding:11px;font-size:11px;line-height:1.8"></div>
+        <button class="btn btn-gold" style="width:100%;justify-content:center;margin-top:8px" onclick="printDoc('internal')">🖨 社内原価表を印刷</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="ch"><div class="ci" style="background:#dc262622;color:var(--red2)">✅</div><h2>承認操作</h2><span class="cnt" id="role-badge">—</span></div>
+      <div class="cb">
+        <div id="approval-panel"></div>
+        <div class="fg fg2" style="gap:8px;margin-top:10px">
+          <div class="field"><label class="lbl">承認者</label><input type="text" id="appr-name" placeholder="鈴木 部長"></div>
+          <div class="field"><label class="lbl">承認日</label><input type="date" id="appr-date"></div>
+          <div class="field fgf"><label class="lbl">コメント / 差戻し理由</label><input type="text" id="appr-comment" placeholder="承認コメントまたは差戻し理由"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- マスタ一覧 -->
+  <div class="pane">
+    <div class="card">
+      <div class="ch"><div class="ci" style="background:#2563eb22;color:var(--blue2)">📊</div><h2>③ マスタ一覧</h2></div>
+      <div class="cb">
+        <div style="font-size:10px;color:var(--txt2);line-height:1.7;margin-bottom:7px">✅ 機械マスタ　✅ 外注マスタ　✅ 管理費率・利益率設定　用途：設定確認・引継ぎ・システム登録参照</div>
+        <div id="prev-master" style="background:var(--bg);border:1px solid var(--bd);border-radius:4px;padding:11px;font-size:11px;line-height:1.8"></div>
+        <button class="btn btn-gold" style="width:100%;justify-content:center;margin-top:8px" onclick="printDoc('master')">🖨 マスタ一覧を印刷</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+</div>
+
+<!-- MODALS -->
+<div class="modal-overlay" id="loginModal">
+  <div class="modal">
+    <h2>🔐 ログイン</h2>
+    <div style="font-size:11px;color:var(--txt2);margin-bottom:12px;padding:8px 10px;background:var(--s2);border:1px solid var(--bd);border-radius:3px;line-height:1.8">
+      <b style="color:var(--gold2)">上司（承認権限）</b>でログインすると承認・差戻し操作ができます。<br>
+      デモ用：yamada / 1234（営業）　suzuki / boss（上司）
+    </div>
+    <div class="fg" style="gap:10px">
+      <div class="field"><label class="lbl">ユーザーID</label><input type="text" id="login-user" placeholder="例：yamada"></div>
+      <div class="field"><label class="lbl">パスワード</label><input type="password" id="login-pass" placeholder="パスワードを入力" onkeydown="if(event.key==='Enter')doLogin()"></div>
+    </div>
+    <div id="login-err" style="color:var(--red2);font-size:11px;margin-top:6px;display:none">ユーザーIDまたはパスワードが違います</div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal('loginModal')">キャンセル</button>
+      <button class="btn btn-gold" onclick="doLogin()">ログイン</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="apprModal">
+  <div class="modal">
+    <h2 id="appr-modal-title">見積もり承認</h2>
+    <div id="appr-modal-info" style="font-size:12px;color:var(--txt2);line-height:2;margin-bottom:10px;padding:8px 10px;background:var(--s2);border:1px solid var(--bd);border-radius:3px"></div>
+    <div class="field"><label class="lbl">コメント（任意）</label><textarea id="appr-modal-comment" rows="3" placeholder="承認コメントまたは差戻し理由を入力"></textarea></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal('apprModal')">キャンセル</button>
+      <button class="btn btn-red" onclick="doApproval('rejected')">✕ 差戻し</button>
+      <button class="btn btn-green" onclick="doApproval('approved')">✓ 承認する</button>
+    </div>
+  </div>
+</div>
+
+<div id="print-area"></div>
+
+<script>
+// ══ CONSTANTS ══
+const MAT={SPCC:{d:7.85,p:120},SECC:{d:7.85,p:150},SGCC:{d:7.85,p:155},SUS304:{d:7.93,p:480},SUS430:{d:7.70,p:320},A5052:{d:2.68,p:550},C1100:{d:8.94,p:1100},custom:{d:7.85,p:200}};
+const MT=[{v:'press',l:'プレス機',c:'#3b82f6'},{v:'brake',l:'プレスブレーキ',c:'#06b6d4'},{v:'spot',l:'スポット溶接',c:'#f97316'},{v:'drill',l:'ボール盤',c:'#22c55e'},{v:'tap',l:'タップ盤',c:'#84cc16'},{v:'laser',l:'レーザー/タレパン',c:'#a855f7'},{v:'barrel',l:'バレル研磨',c:'#ec4899'},{v:'other',l:'その他',c:'#94a3b8'}];
+const OT=[{v:'plating',l:'メッキ',c:'#a855f7'},{v:'paint',l:'塗装',c:'#f97316'},{v:'heat',l:'熱処理',c:'#ef4444'},{v:'weld',l:'溶接外注',c:'#f59e0b'},{v:'grind',l:'研磨',c:'#06b6d4'},{v:'other',l:'その他外注',c:'#94a3b8'}];
+const UT=[{v:'per_pc',l:'円/個'},{v:'per_kg',l:'円/kg'},{v:'per_m2',l:'円/m²'},{v:'per_lot',l:'円/式'}];
+const STM={draft:{l:'下書き',c:'st-draft'},pending:{l:'承認待ち',c:'st-pending'},approved:{l:'承認済み',c:'st-approved'},rejected:{l:'差戻し',c:'st-rejected'},sent:{l:'顧客送付済',c:'st-sent'},ordered:{l:'受注',c:'st-ordered'},lost:{l:'失注',c:'st-lost'}};
+const SC={draft:'#94a3b8',pending:'#f59e0b',approved:'#22c55e',rejected:'#ef4444',sent:'#60a5fa',ordered:'#a855f7',lost:'#6b7280'};
+
+// ══ STATE ══
+let machines=[{id:'m1',name:'60Tプレス機',type:'press',chargeH:3000},{id:'m2',name:'150Tプレス機',type:'press',chargeH:5000},{id:'m3',name:'プレスブレーキ',type:'brake',chargeH:3500},{id:'m4',name:'スポット溶接機',type:'spot',chargeH:2500},{id:'m5',name:'ボール盤',type:'drill',chargeH:2000}];
+let outsources=[{id:'o1',name:'ユニクロメッキ',type:'plating',unitType:'per_pc',unitPrice:30},{id:'o2',name:'粉体塗装',type:'paint',unitType:'per_pc',unitPrice:150},{id:'o3',name:'熱処理（焼入れ）',type:'heat',unitType:'per_kg',unitPrice:80}];
+let users=[{id:'u1',name:'山田 太郎',username:'yamada',password:'1234',role:'sales'},{id:'u2',name:'鈴木 部長',username:'suzuki',password:'boss',role:'manager'},{id:'u3',name:'田中 花子',username:'tanaka',password:'1234',role:'sales'}];
+let quotes=[];
+let processes=[];
+let qSeq=1,pSeq=1,mSeq=10,oSeq=10,uSeq=10;
+let currentUser=null;
+let editingId=null;
+let pendingApprId=null;
+let LAST={};
+
+// ══ NAV ══
+function goPage(id,btn){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.ntab').forEach(b=>b.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+  if(btn) btn.classList.add('active');
+  if(id==='output'){calcAll();buildPreviews();updateApprPanel();}
+  if(id==='dash'){updateKPIs();renderList();}
+}
+
+// ══ LOGIN ══
+function openLoginModal(){
+  document.getElementById('loginModal').classList.add('open');
+  document.getElementById('login-user').value='';
+  document.getElementById('login-pass').value='';
+  document.getElementById('login-err').style.display='none';
+  setTimeout(()=>document.getElementById('login-user').focus(),100);
+}
+function closeModal(id){document.getElementById(id).classList.remove('open');}
+function doLogin(){
+  const un=document.getElementById('login-user').value.trim();
+  const pw=document.getElementById('login-pass').value;
+  const u=users.find(u=>u.username===un&&u.password===pw);
+  if(!u){document.getElementById('login-err').style.display='block';return;}
+  currentUser=u;
+  const av=document.getElementById('nav-avatar');
+  av.textContent=u.name[0];
+  av.style.background=u.role==='manager'?'#16a34a22':'#2563eb22';
+  av.style.color=u.role==='manager'?'var(--green2)':'var(--blue2)';
+  document.getElementById('nav-uname').textContent=u.name;
+  document.getElementById('nav-role').textContent=u.role==='manager'?'上司（承認権限）':'営業';
+  closeModal('loginModal');
+  updateApprPanel();
+  renderList();
+}
+
+// ══ MASTER ══
+function renderMachines(){
+  const tb=document.getElementById('machBody');tb.innerHTML='';
+  machines.forEach((m,i)=>{
+    const mt=MT.find(t=>t.v===m.type)||MT[7];
+    const to=MT.map(t=>`<option value="${t.v}"${t.v===m.type?' selected':''}>${t.l}</option>`).join('');
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td><div style="display:flex;align-items:center;gap:4px;margin-bottom:2px"><span style="width:5px;height:5px;border-radius:50%;background:${mt.c};flex-shrink:0"></span><span style="font-size:9px;color:${mt.c}">${mt.l}</span></div><input type="text" value="${m.name}" oninput="machines[${i}].name=this.value;rebuildSel()"></td><td><select onchange="machines[${i}].type=this.value;renderMachines();rebuildSel()">${to}</select></td><td><div class="uf"><input type="number" value="${m.chargeH}" min="0" oninput="machines[${i}].chargeH=+this.value;calcAll()"><span class="u">円/h</span></div></td><td><button class="btn-danger" onclick="machines.splice(${i},1);renderMachines();rebuildSel();calcAll()">✕</button></td>`;
+    tb.appendChild(tr);
+  });
+  document.getElementById('mcnt').textContent=machines.length+'台';
+}
+function addMachine(){machines.push({id:'m'+(++mSeq),name:'新規機械',type:'press',chargeH:3000});renderMachines();rebuildSel();}
+
+function renderOutsources(){
+  const tb=document.getElementById('outBody');tb.innerHTML='';
+  outsources.forEach((o,i)=>{
+    const ot=OT.find(t=>t.v===o.type)||OT[5];
+    const to=OT.map(t=>`<option value="${t.v}"${t.v===o.type?' selected':''}>${t.l}</option>`).join('');
+    const uo=UT.map(t=>`<option value="${t.v}"${t.v===o.unitType?' selected':''}>${t.l}</option>`).join('');
+    const ul=UT.find(t=>t.v===o.unitType)?.l||'円/個';
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td><div style="display:flex;align-items:center;gap:4px;margin-bottom:2px"><span style="width:5px;height:5px;border-radius:50%;background:${ot.c};flex-shrink:0"></span><span style="font-size:9px;color:${ot.c}">${ot.l}</span></div><input type="text" value="${o.name}" oninput="outsources[${i}].name=this.value;rebuildSel()"></td><td><select onchange="outsources[${i}].type=this.value;renderOutsources();rebuildSel()">${to}</select></td><td><select onchange="outsources[${i}].unitType=this.value;renderOutsources();calcAll()">${uo}</select></td><td><div class="uf"><input type="number" value="${o.unitPrice}" min="0" oninput="outsources[${i}].unitPrice=+this.value;calcAll()"><span class="u">${ul}</span></div></td><td><button class="btn-danger" onclick="outsources.splice(${i},1);renderOutsources();rebuildSel();calcAll()">✕</button></td>`;
+    tb.appendChild(tr);
+  });
+  document.getElementById('ocnt').textContent=outsources.length+'件';
+}
+function addOutsource(){outsources.push({id:'o'+(++oSeq),name:'新規外注',type:'other',unitType:'per_pc',unitPrice:100});renderOutsources();rebuildSel();}
+
+function renderUsers(){
+  const el=document.getElementById('userList');el.innerHTML='';
+  users.forEach((u,i)=>{
+    const ro=[{v:'sales',l:'営業'},{v:'manager',l:'上司（承認権限）'}].map(r=>`<option value="${r.v}"${u.role===r.v?' selected':''}>${r.l}</option>`).join('');
+    const div=document.createElement('div');
+    div.style.cssText='display:grid;grid-template-columns:1fr 80px 80px 90px 24px;gap:6px;align-items:center;padding:5px 0;border-bottom:1px solid var(--bd)';
+    div.innerHTML=`<input type="text" value="${u.name}" oninput="users[${i}].name=this.value;refreshStaff()"><input type="text" value="${u.username}" placeholder="ID" oninput="users[${i}].username=this.value"><input type="password" value="${u.password}" placeholder="PW" oninput="users[${i}].password=this.value"><select onchange="users[${i}].role=this.value">${ro}</select><button class="btn-danger" onclick="users.splice(${i},1);renderUsers();refreshStaff()">✕</button>`;
+    el.appendChild(div);
+  });
+  refreshStaff();
+}
+function addUser(){users.push({id:'u'+(++uSeq),name:'新規ユーザー',username:'user'+uSeq,password:'1234',role:'sales'});renderUsers();}
+function refreshStaff(){
+  const sel=document.getElementById('q-staff');
+  if(sel){const cur=sel.value;sel.innerHTML='<option value="">選択</option>'+users.map(u=>`<option value="${u.name}"${u.name===cur?' selected':''}>${u.name}</option>`).join('');}
+  const fs=document.getElementById('f-staff');
+  if(fs){fs.innerHTML='<option value="">全担当者</option>'+users.map(u=>`<option value="${u.name}">${u.name}</option>`).join('');}
+}
+function syncMat(){const k=document.getElementById('mat-kind').value;const p=MAT[k];if(p){document.getElementById('mat-den').value=p.d;document.getElementById('mat-price').value=p.p;}calcAll();}
+
+// ══ PROCESS ══
+function rebuildSel(){
+  document.querySelectorAll('.pmsel').forEach(sel=>{const c=sel.value;sel.innerHTML=machines.map(m=>`<option value="${m.id}"${m.id===c?' selected':''}>${m.name}（${m.chargeH.toLocaleString()}円/h）</option>`).join('');if(!machines.find(m=>m.id===c)&&machines.length) sel.value=machines[0].id;});
+  document.querySelectorAll('.posel').forEach(sel=>{const c=sel.value;sel.innerHTML=outsources.map(o=>`<option value="${o.id}"${o.id===c?' selected':''}>${o.name}</option>`).join('');if(!outsources.find(o=>o.id===c)&&outsources.length) sel.value=outsources[0].id;});
+}
+function addProc(kind){
+  const id='pr'+(pSeq++);
+  if(kind==='machine') processes.push({id,kind:'machine',machineId:machines[0]?.id||'',name:'工程'+pSeq,outputH:''});
+  else processes.push({id,kind:'outsource',outsourceId:outsources[0]?.id||'',name:'外注'+pSeq,qty:1});
+  renderProcs();calcAll();
+}
+function removeProc(id){processes=processes.filter(p=>p.id!==id);renderProcs();calcAll();}
+function renderProcs(){
+  const list=document.getElementById('procList');list.innerHTML='';
+  processes.forEach((p,i)=>{
+    const div=document.createElement('div');div.className='proc-row';
+    if(p.kind==='machine'){
+      const mo=machines.map(m=>`<option value="${m.id}"${m.id===p.machineId?' selected':''}>${m.name}（${m.chargeH.toLocaleString()}円/h）</option>`).join('');
+      const mach=machines.find(m=>m.id===p.machineId);
+      const mt=mach?(MT.find(t=>t.v===mach.type)||MT[7]):null;
+      div.innerHTML=`<div class="pgm"><div class="proc-seq">${i+1}</div><div class="field"><label class="lbl">機械</label><select class="pmsel" onchange="processes[${i}].machineId=this.value;calcAll()">${mo}</select></div><div class="field"><label class="lbl">工程名</label><input type="text" value="${p.name}" oninput="processes[${i}].name=this.value;calcAll()"></div><div class="field"><label class="lbl">出来高（個/h）</label><div class="uf"><input type="number" value="${p.outputH||''}" min="0.1" step="0.1" placeholder="300" oninput="processes[${i}].outputH=+this.value||'';calcAll()"><span class="u">個/h</span></div></div><div class="field"><label class="lbl">時間/個</label><div style="background:var(--s2);border:1px solid var(--bd);border-radius:3px;padding:5px 4px;font-family:var(--mono);font-size:10px;color:var(--txt2)" id="pt_${p.id}">—</div></div><div class="proc-cost" id="pc_${p.id}">—</div><button class="btn-danger" onclick="removeProc('${p.id}')">✕</button></div>${mt?`<span class="proc-tag" style="background:${mt.c}22;color:${mt.c}">${mt.l}</span>`:''}`;
+    } else {
+      const oo=outsources.map(o=>`<option value="${o.id}"${o.id===p.outsourceId?' selected':''}>${o.name}</option>`).join('');
+      const out=outsources.find(o=>o.id===p.outsourceId);
+      const ul=out?(UT.find(t=>t.v===out.unitType)?.l||'円/個'):'';
+      div.innerHTML=`<div class="pgo"><div class="proc-seq">${i+1}</div><div class="field"><label class="lbl">外注工程</label><select class="posel" onchange="processes[${i}].outsourceId=this.value;renderProcs();calcAll()">${oo}</select></div><div class="field"><label class="lbl">工程名</label><input type="text" value="${p.name}" oninput="processes[${i}].name=this.value;calcAll()"></div><div class="field"><label class="lbl">数量/係数</label><div class="uf"><input type="number" value="${p.qty||1}" min="0" step="0.1" oninput="processes[${i}].qty=+this.value;calcAll()"><span class="u">${ul.split('/')[1]||''}</span></div></div><div class="proc-cost" id="pc_${p.id}">—</div><button class="btn-danger" onclick="removeProc('${p.id}')">✕</button></div><span class="proc-tag" style="background:#7c3aed22;color:#a855f7">外注</span>`;
+    }
+    list.appendChild(div);
+  });
+}
+
+// ══ CALC ══
+function calcAll(){
+  const g=id=>parseFloat(document.getElementById(id)?.value)||0;
+  const qty=parseInt(document.getElementById('q-qty')?.value)||1;
+  const W=g('mat-w'),L=g('mat-l'),t=parseFloat(document.getElementById('mat-t')?.value)||1;
+  const den=g('mat-den')||7.85,mp=g('mat-price'),yld=g('mat-yld')/100||.75;
+  const die=g('q-die'),setup=g('q-setup'),fix=g('q-fixother');
+  const mgr=g('mgmt-rate')/100,pr=parseFloat(document.getElementById('profit-slider')?.value)/100||.2;
+  const tax=g('tax-rate')/100||.1;
+  const aM2=(W/1000)*(L/1000);
+  const wKg=aM2*(t/1000)*den*1000;
+  const mc=(wKg*mp)/yld;
+  const el=id=>document.getElementById(id);
+  if(el('mat-disp')) el('mat-disp').textContent='¥'+Math.round(mc).toLocaleString();
+  let machC=0,outC=0;
+  const pd=[];
+  processes.forEach(p=>{
+    let c=0;
+    if(p.kind==='machine'){
+      const m=machines.find(x=>x.id===p.machineId);
+      if(m&&p.outputH){c=m.chargeH/p.outputH;const pt=el('pt_'+p.id);if(pt) pt.textContent=((1/p.outputH)*60).toFixed(2)+' 分';}
+      else{const pt=el('pt_'+p.id);if(pt) pt.textContent='出来高を入力';}
+      machC+=c;
+    } else {
+      const o=outsources.find(x=>x.id===p.outsourceId);
+      if(o){const q=p.qty||1;if(o.unitType==='per_pc') c=o.unitPrice*q;else if(o.unitType==='per_kg') c=o.unitPrice*wKg*q;else if(o.unitType==='per_m2') c=o.unitPrice*aM2*q;else c=o.unitPrice/qty;}
+      outC+=c;
+    }
+    const pc=el('pc_'+p.id);if(pc) pc.textContent=c>0?'¥'+Math.round(c).toLocaleString():'—';
+    pd.push({name:p.name,kind:p.kind,cost:c});
+  });
+  const pt=machC+outC,fp=(die+setup+fix)/qty;
+  const dc=mc+pt+fp,mg=dc*mgr,mfg=dc+mg;
+  const up=mfg/(1-pr),profit=up-mfg,ft=up*qty,ta=ft*tax;
+  const fmt=v=>'¥'+Math.round(v).toLocaleString();
+  if(el('r-mat'))    el('r-mat').textContent=fmt(mc);
+  if(el('r-proc'))   el('r-proc').textContent=fmt(pt);
+  if(el('r-out'))    el('r-out').textContent=fmt(outC);
+  if(el('r-fix'))    el('r-fix').textContent=fmt(fp);
+  if(el('r-direct')) el('r-direct').textContent=fmt(dc);
+  if(el('r-mgmt'))   el('r-mgmt').textContent=fmt(mg);
+  if(el('r-mgr'))    el('r-mgr').textContent='('+g('mgmt-rate')+'%)';
+  if(el('r-mfg'))    el('r-mfg').textContent=fmt(mfg);
+  if(el('r-profit')) el('r-profit').textContent=fmt(profit);
+  if(el('r-final'))  el('r-final').textContent='¥ '+Math.round(ft).toLocaleString();
+  if(el('r-unit'))   el('r-unit').textContent='単価 '+Math.round(up).toLocaleString()+' 円 / 個';
+  if(el('r-taxr'))   el('r-taxr').textContent=g('tax-rate');
+  if(el('r-tax'))    el('r-tax').textContent=fmt(ta);
+  if(el('r-withtax'))el('r-withtax').textContent=fmt(ft+ta);
+  const pct=pr*100;
+  const gc=pct<10?'#ef4444':pct<15?'#f97316':pct<20?'#f59e0b':'#22c55e';
+  if(el('gauge-fill')){el('gauge-fill').style.width=Math.min(pct,60)/60*100+'%';el('gauge-fill').style.background=gc;}
+  if(el('gauge-val')){el('gauge-val').style.color=gc;el('gauge-val').textContent=pct.toFixed(0)+'%';}
+  if(el('r-profit')) el('r-profit').style.color=gc;
+  const tot=mfg||1;
+  const segs=[{l:'材料費',v:mc,c:'#f0b429'},{l:'加工費',v:machC,c:'#3b82f6'},{l:'外注費',v:outC,c:'#a855f7'},{l:'固定費',v:fp,c:'#f97316'},{l:'管理費',v:mg,c:'#64748b'}];
+  if(el('cost-stack')) el('cost-stack').innerHTML=segs.map(s=>`<div class="stk" style="width:${Math.max(s.v/tot*100,.5).toFixed(1)}%;background:${s.c}" title="${s.l}：${Math.round(s.v).toLocaleString()}円"></div>`).join('');
+  if(el('cost-bars')) el('cost-bars').innerHTML=segs.map(s=>`<div class="bar-row"><span class="bar-lbl">${s.l}</span><div class="bar-track"><div class="bar-fill" style="width:${Math.max(s.v/tot*100,0).toFixed(1)}%;background:${s.c}"></div></div><span class="bar-pct">${(s.v/tot*100).toFixed(0)}%</span><span class="bar-val">¥${Math.round(s.v).toLocaleString()}</span></div>`).join('');
+  LAST={qty,mc,machC,outC,fp,dc,mg,mfg,profit,up,ft,ta,pr,wKg,aM2,pd,segs,mgr};
+}
+function onSlider(){const v=document.getElementById('profit-slider').value;document.getElementById('profit-val').textContent=v+'%';calcAll();}
+
+// ══ SAVE / LOAD ══
+function gv(id){return document.getElementById(id)?.value||'';}
+function newQuote(){
+  editingId=null;processes=[];pSeq=1;
+  document.getElementById('q-id-disp').textContent='新規';
+  ['q-cust','q-part','q-note'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
+  document.getElementById('q-qty').value=1000;
+  document.getElementById('q-die').value=0;
+  document.getElementById('q-setup').value=5000;
+  document.getElementById('q-fixother').value=0;
+  document.getElementById('q-progress').value='draft';
+  document.getElementById('q-date').value=new Date().toISOString().split('T')[0];
+  const exp=new Date();exp.setMonth(exp.getMonth()+1);
+  document.getElementById('q-expire').value=exp.toISOString().split('T')[0];
+  renderProcs();calcAll();
+  goPage('quote',document.querySelector('.ntab:nth-child(3)'));
+}
+function saveQuote(){
+  calcAll();
+  const id=editingId||('Q'+(String(qSeq++).padStart(4,'0')));
+  const q={id,customer:gv('q-cust'),part:gv('q-part'),qty:parseInt(document.getElementById('q-qty').value)||1,staff:gv('q-staff'),date:gv('q-date'),expire:gv('q-expire'),note:gv('q-note'),progress:gv('q-progress'),finalTotal:LAST.ft||0,unitPrice:LAST.up||0,profitRate:LAST.pr||0,mfgCost:LAST.mfg||0,apprName:gv('appr-name'),apprDate:gv('appr-date'),apprComment:gv('appr-comment'),snap:JSON.parse(JSON.stringify(LAST)),savedAt:new Date().toISOString()};
+  const ei=quotes.findIndex(x=>x.id===id);
+  if(ei>=0) quotes[ei]=q; else quotes.push(q);
+  editingId=id;
+  document.getElementById('q-id-disp').textContent=id;
+  updateKPIs();
+  alert('✅ 保存しました：'+id);
+}
+function loadQuote(id){
+  const q=quotes.find(x=>x.id===id);if(!q) return;
+  editingId=id;
+  document.getElementById('q-id-disp').textContent=id;
+  document.getElementById('q-cust').value=q.customer;
+  document.getElementById('q-part').value=q.part;
+  document.getElementById('q-qty').value=q.qty;
+  document.getElementById('q-staff').value=q.staff;
+  document.getElementById('q-date').value=q.date;
+  document.getElementById('q-expire').value=q.expire||'';
+  document.getElementById('q-note').value=q.note;
+  document.getElementById('q-progress').value=q.progress;
+  if(document.getElementById('appr-name')) document.getElementById('appr-name').value=q.apprName||'';
+  if(document.getElementById('appr-date')) document.getElementById('appr-date').value=q.apprDate||'';
+  if(document.getElementById('appr-comment')) document.getElementById('appr-comment').value=q.apprComment||'';
+  goPage('quote',document.querySelector('.ntab:nth-child(3)'));
+  calcAll();
+}
+
+// ══ DASHBOARD ══
+function updateKPIs(){
+  const e=id=>document.getElementById(id);
+  e('kpi-cnt').textContent=quotes.length;
+  e('kpi-total').textContent='¥'+Math.round(quotes.reduce((s,q)=>s+(q.finalTotal||0),0)).toLocaleString();
+  e('kpi-pending').textContent=quotes.filter(q=>q.progress==='pending').length;
+  e('kpi-approved').textContent=quotes.filter(q=>q.progress==='approved').length;
+  e('kpi-rejected').textContent=quotes.filter(q=>q.progress==='rejected').length;
+}
+function renderList(){
+  updateKPIs();
+  const sf=document.getElementById('f-status')?.value||'';
+  const stf=document.getElementById('f-staff')?.value||'';
+  const sw=(document.getElementById('f-search')?.value||'').toLowerCase();
+  const fl=quotes.filter(q=>{
+    if(sf&&q.progress!==sf) return false;
+    if(stf&&q.staff!==stf) return false;
+    if(sw&&!(q.customer.toLowerCase().includes(sw)||q.part.toLowerCase().includes(sw))) return false;
+    return true;
+  });
+  document.getElementById('list-cnt').textContent=fl.length+'件';
+  const list=document.getElementById('quoteList');
+  if(!fl.length){list.innerHTML='<div style="padding:28px;text-align:center;color:var(--txt2);font-size:12px">該当する見積もりがありません。「＋ 新規見積もり」から作成してください。</div>';return;}
+  list.innerHTML=fl.map(q=>{
+    const st=STM[q.progress]||STM.draft;
+    const pc=q.profitRate?Math.round(q.profitRate*100)+'%':'—';
+    const pcol=q.profitRate>=.2?'#22c55e':q.profitRate>=.1?'#f59e0b':'#ef4444';
+    const canApprove=currentUser?.role==='manager'&&q.progress==='pending';
+    return `<div class="qli" onclick="loadQuote('${q.id}')">
+      <span style="font-family:var(--mono);font-size:10px;color:var(--txt2)">${q.id}</span>
+      <div style="display:flex;flex-direction:column;gap:2px"><span style="font-size:12px;font-weight:600">${q.part||'（品番未入力）'}</span><span style="font-size:10px;color:var(--txt2)">${q.customer||'—'}</span></div>
+      <span style="font-size:11px;color:var(--txt2)">${q.staff||'—'}</span>
+      <span style="font-family:var(--mono);font-size:11px;color:var(--txt2)">${q.date||'—'}</span>
+      <span style="font-family:var(--mono);font-size:13px;color:var(--gold2);text-align:right">¥${Math.round(q.finalTotal||0).toLocaleString()}</span>
+      <span style="font-family:var(--mono);font-size:12px;color:${pcol};text-align:right">${pc}</span>
+      <span class="st-badge ${st.c}">${st.l}</span>
+      <div style="display:flex;gap:4px;justify-content:flex-end" onclick="event.stopPropagation()">
+        <button class="btn btn-ghost btn-sm" onclick="loadQuote('${q.id}')">編集</button>
+        ${canApprove?`<button class="btn btn-green btn-sm" onclick="openApprModal('${q.id}')">承認</button>`:''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ══ APPROVAL ══
+function updateApprPanel(){
+  const panel=document.getElementById('approval-panel');
+  const badge=document.getElementById('role-badge');
+  if(!panel) return;
+  if(currentUser?.role==='manager'){
+    if(badge){badge.textContent='上司権限';badge.style.color='var(--green2)';}
+    panel.innerHTML=`
+      <div style="padding:9px 10px;background:#16a34a11;border:1px solid #16a34a44;border-radius:4px;font-size:11px;color:var(--green2);margin-bottom:8px">
+        ✅ 上司権限でログイン中。承認・差戻しの操作が可能です。
+      </div>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-green" style="flex:1;justify-content:center" onclick="doApprovalDirect('approved')">✓ 承認する</button>
+        <button class="btn btn-red" style="flex:1;justify-content:center" onclick="doApprovalDirect('rejected')">✕ 差戻しする</button>
+      </div>`;
+  } else {
+    if(badge){badge.textContent='営業';badge.style.color='var(--txt2)';}
+    panel.innerHTML=`
+      <div style="padding:9px 10px;background:var(--bg);border:1px solid var(--bd);border-radius:4px;font-size:11px;color:var(--txt2);line-height:1.8">
+        🔐 上司権限のアカウントでログインすると、ここから直接承認・差戻しができます。<br>
+        右上のアイコンをクリックしてログインしてください。<br>
+        <span style="color:var(--gold2)">デモ：suzuki / boss でログイン → 承認ボタンが表示されます</span>
+      </div>`;
+  }
+}
+function doApprovalDirect(status){
+  if(!editingId){alert('先に見積もりを保存してください。');return;}
+  const q=quotes.find(x=>x.id===editingId);
+  if(q){
+    q.progress=status;
+    q.apprName=currentUser.name;
+    q.apprDate=new Date().toISOString().split('T')[0];
+    q.apprComment=document.getElementById('appr-comment')?.value||'';
+    document.getElementById('q-progress').value=status;
+    if(document.getElementById('appr-name')) document.getElementById('appr-name').value=currentUser.name;
+    if(document.getElementById('appr-date')) document.getElementById('appr-date').value=q.apprDate;
+    updateKPIs();buildPreviews();
+    alert(status==='approved'?'✅ 承認しました！':'⚠️ 差戻しにしました。');
+  }
+}
+function openApprModal(id){
+  const q=quotes.find(x=>x.id===id);if(!q) return;
+  pendingApprId=id;
+  document.getElementById('appr-modal-title').textContent='見積もり承認：'+id;
+  document.getElementById('appr-modal-info').innerHTML=`顧客：<b>${q.customer}</b> ／ 品番：${q.part}<br>数量：${q.qty}個 ／ 見積金額：¥${Math.round(q.finalTotal).toLocaleString()}（税抜）<br>利益率：${Math.round(q.profitRate*100)}% ／ 担当：${q.staff}`;
+  document.getElementById('appr-modal-comment').value='';
+  document.getElementById('apprModal').classList.add('open');
+}
+function doApproval(status){
+  const q=quotes.find(x=>x.id===pendingApprId);
+  if(q){q.progress=status;q.apprName=currentUser?.name||'';q.apprDate=new Date().toISOString().split('T')[0];q.apprComment=document.getElementById('appr-modal-comment').value;updateKPIs();renderList();}
+  closeModal('apprModal');
+  alert(status==='approved'?'✅ 承認しました！':'⚠️ 差戻しにしました。');
+}
+
+// ══ EMAIL ══
+function buildEmail(){
+  const mgr=users.find(u=>u.role==='manager');
+  const staff=gv('q-staff')||currentUser?.name||'（担当者）';
+  const mgrName=mgr?mgr.name+'　様':'（上司名）　様';
+  const body=`${mgrName}
+
+お疲れ様です。${staff}です。
+
+下記見積もりについて、ご承認をお願いいたします。
+社内原価表をPDFにて添付しておりますので、ご確認ください。
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━
+【見積No.】　${editingId||'（保存後に発行）'}
+【顧客名】　　${gv('q-cust')||'（未入力）'}
+【品番・品名】${gv('q-part')||'（未入力）'}
+【数量】　　　${gv('q-qty')||'—'} 個
+【見積金額】　¥${Math.round(LAST.ft||0).toLocaleString()}（税抜）
+【利益率】　　${Math.round((LAST.pr||0)*100)} %
+【担当者】　　${staff}
+【見積日】　　${gv('q-date')||'—'}
+【有効期限】　${gv('q-expire')||'—'}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+ご承認いただけましたら、システム上で承認ステータスのご更新をお願いいたします。
+ご不明な点がございましたら、お気軽にお申し付けください。
+
+よろしくお願いいたします。
+${staff}`;
+  const e=document.getElementById('email-body');if(e) e.textContent=body;
+  return body;
+}
+function copyEmail(){
+  const text=buildEmail();
+  navigator.clipboard.writeText(text).then(()=>alert('📋 メール文面をコピーしました！\nメールソフトに貼り付け、社内原価表PDFを添付してお送りください。')).catch(()=>{const ta=document.createElement('textarea');ta.value=text;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);alert('コピーしました！');});
+}
+
+// ══ PREVIEWS ══
+const fmt=v=>'¥'+Math.round(v).toLocaleString();
+function buildPreviews(){calcAll();buildCustPrev();buildIntPrev();buildMastPrev();buildEmail();}
+
+function buildCustPrev(){
+  const e=document.getElementById('prev-customer');if(!e) return;
+  const q=editingId?quotes.find(x=>x.id===editingId):null;
+  const st=STM[gv('q-progress')]||STM.draft;
+  e.innerHTML=`<div style="font-weight:900;font-size:13px;border-bottom:2px solid var(--gold);padding-bottom:5px;margin-bottom:7px">見　積　書</div>
+    <div style="color:var(--txt2);font-size:10px;margin-bottom:7px">見積No.：${editingId||'—'} ／ 見積日：${gv('q-date')} ／ 有効期限：${gv('q-expire')}<br>顧客：<b style="color:var(--txt)">${gv('q-cust')||'—'}</b> ／ 担当：${gv('q-staff')||'—'} ／ 承認：<span class="st-badge ${st.c}" style="font-size:9px">${st.l}</span></div>
+    <table style="width:100%;border-collapse:collapse;font-size:11px"><tr style="background:var(--s2)"><th style="padding:3px 6px;border:1px solid var(--bd);text-align:left">品番・品名</th><th style="padding:3px 6px;border:1px solid var(--bd);text-align:right">数量</th><th style="padding:3px 6px;border:1px solid var(--bd);text-align:right">単価（税抜）</th><th style="padding:3px 6px;border:1px solid var(--bd);text-align:right">金額（税抜）</th></tr>
+    <tr><td style="padding:3px 6px;border:1px solid var(--bd)">${gv('q-part')||'—'}</td><td style="padding:3px 6px;border:1px solid var(--bd);text-align:right;font-family:var(--mono)">${gv('q-qty')}個</td><td style="padding:3px 6px;border:1px solid var(--bd);text-align:right;font-family:var(--mono)">${fmt(LAST.up||0)}</td><td style="padding:3px 6px;border:1px solid var(--bd);text-align:right;font-family:var(--mono)">${fmt(LAST.ft||0)}</td></tr>
+    <tr><td colspan="3" style="padding:3px 6px;border:1px solid var(--bd);text-align:right;font-size:10px;color:var(--txt2)">消費税（${gv('tax-rate')||10}%）</td><td style="padding:3px 6px;border:1px solid var(--bd);text-align:right;font-family:var(--mono)">${fmt(LAST.ta||0)}</td></tr>
+    <tr style="background:var(--s2)"><td colspan="3" style="padding:3px 6px;border:1px solid var(--bd);text-align:right;font-weight:700">合計（税込）</td><td style="padding:3px 6px;border:1px solid var(--bd);text-align:right;font-family:var(--mono);color:var(--gold2);font-weight:700">${fmt((LAST.ft||0)+(LAST.ta||0))}</td></tr></table>
+    ${gv('q-note')?`<div style="margin-top:5px;font-size:10px;color:var(--txt2)">備考：${gv('q-note')}</div>`:''}`;
+}
+
+function buildIntPrev(){
+  const e=document.getElementById('prev-internal');if(!e) return;
+  const st=STM[gv('q-progress')]||STM.draft;
+  e.innerHTML=`<div style="font-weight:900;font-size:12px;border-bottom:2px solid var(--green2);padding-bottom:4px;margin-bottom:6px;color:var(--green2)">社内原価表【機密】</div>
+    <div style="font-size:10px;color:var(--txt2);margin-bottom:5px">No.：${editingId||'—'} ／ ${gv('q-part')||'—'} ／ ${gv('q-cust')||'—'} ／ ${gv('q-qty')}個 ／ 担当：${gv('q-staff')||'—'}<br><span style="color:${SC[gv('q-progress')]||'#94a3b8'};font-weight:700">承認：${st.l}</span>${gv('appr-name')?' 承認者：'+gv('appr-name')+' '+gv('appr-date'):''}${gv('appr-comment')?'<br>コメント：'+gv('appr-comment'):''}</div>
+    <table style="width:100%;border-collapse:collapse;font-size:10px"><tr style="background:var(--s2)"><th style="padding:3px 5px;border:1px solid var(--bd);text-align:left">費目</th><th style="padding:3px 5px;border:1px solid var(--bd);text-align:right;width:88px">金額/個</th><th style="padding:3px 5px;border:1px solid var(--bd);text-align:right;width:48px">構成比</th></tr>
+    ${(LAST.segs||[]).map(s=>`<tr><td style="padding:3px 5px;border:1px solid var(--bd)">${s.l}</td><td style="padding:3px 5px;border:1px solid var(--bd);text-align:right;font-family:var(--mono)">${fmt(s.v)}</td><td style="padding:3px 5px;border:1px solid var(--bd);text-align:right;font-family:var(--mono)">${(s.v/(LAST.mfg||1)*100).toFixed(1)}%</td></tr>`).join('')}
+    <tr style="background:var(--s2);font-weight:700"><td style="padding:3px 5px;border:1px solid var(--bd)">製造原価合計</td><td style="padding:3px 5px;border:1px solid var(--bd);text-align:right;font-family:var(--mono)">${fmt(LAST.mfg||0)}</td><td style="padding:3px 5px;border:1px solid var(--bd);text-align:right">—</td></tr>
+    <tr><td style="padding:3px 5px;border:1px solid var(--bd)">利益（${Math.round((LAST.pr||0)*100)}%）</td><td style="padding:3px 5px;border:1px solid var(--bd);text-align:right;font-family:var(--mono);color:var(--green2)">${fmt(LAST.profit||0)}</td><td style="padding:3px 5px;border:1px solid var(--bd);text-align:right">—</td></tr>
+    <tr style="background:var(--s2);font-weight:700"><td style="padding:3px 5px;border:1px solid var(--bd);color:var(--gold2)">見積単価（税抜）</td><td style="padding:3px 5px;border:1px solid var(--bd);text-align:right;font-family:var(--mono);color:var(--gold2)">${fmt(LAST.up||0)}</td><td style="padding:3px 5px;border:1px solid var(--bd);text-align:right">—</td></tr></table>
+    <div style="font-size:9px;color:var(--txt2);margin-top:4px">※社内原価資料。顧客への開示禁止。製造部・品質保証部・生産管理共通。</div>`;
+}
+
+function buildMastPrev(){
+  const e=document.getElementById('prev-master');if(!e) return;
+  const mr=machines.map(m=>{const mt=MT.find(t=>t.v===m.type)||MT[7];return`<tr><td style="padding:2px 5px;border:1px solid var(--bd)">${m.name}</td><td style="padding:2px 5px;border:1px solid var(--bd)">${mt.l}</td><td style="padding:2px 5px;border:1px solid var(--bd);text-align:right;font-family:var(--mono)">${m.chargeH.toLocaleString()}円/h</td></tr>`;}).join('');
+  const or=outsources.map(o=>{const ot=OT.find(t=>t.v===o.type)||OT[5];const ul=UT.find(t=>t.v===o.unitType)?.l||'円/個';return`<tr><td style="padding:2px 5px;border:1px solid var(--bd)">${o.name}</td><td style="padding:2px 5px;border:1px solid var(--bd)">${ot.l}</td><td style="padding:2px 5px;border:1px solid var(--bd)">${ul}</td><td style="padding:2px 5px;border:1px solid var(--bd);text-align:right;font-family:var(--mono)">${o.unitPrice.toLocaleString()}${ul}</td></tr>`;}).join('');
+  e.innerHTML=`<div style="font-weight:900;font-size:12px;border-bottom:2px solid var(--blue2);padding-bottom:4px;margin-bottom:5px;color:var(--blue2)">マスタ一覧</div>
+    <div style="font-size:10px;color:var(--txt2);margin-bottom:5px">管理費率：${document.getElementById('mgmt-rate')?.value||15}% ／ 目標利益率：${document.getElementById('target-profit')?.value||20}% ／ 消費税：${document.getElementById('tax-rate')?.value||10}%</div>
+    <div style="font-size:10px;color:var(--txt2);margin-bottom:2px">■ 機械マスタ（${machines.length}台）</div>
+    <table style="width:100%;border-collapse:collapse;font-size:10px;margin-bottom:5px"><tr style="background:var(--s2)"><th style="padding:2px 5px;border:1px solid var(--bd);text-align:left">機械名</th><th style="padding:2px 5px;border:1px solid var(--bd);text-align:left">種別</th><th style="padding:2px 5px;border:1px solid var(--bd);text-align:right">チャージ</th></tr>${mr}</table>
+    <div style="font-size:10px;color:var(--txt2);margin-bottom:2px">■ 外注マスタ（${outsources.length}件）</div>
+    <table style="width:100%;border-collapse:collapse;font-size:10px"><tr style="background:var(--s2)"><th style="padding:2px 5px;border:1px solid var(--bd);text-align:left">工程名</th><th style="padding:2px 5px;border:1px solid var(--bd);text-align:left">種別</th><th style="padding:2px 5px;border:1px solid var(--bd)">単価種別</th><th style="padding:2px 5px;border:1px solid var(--bd);text-align:right">単価</th></tr>${or}</table>`;
+}
+
+// ══ PRINT ══
+function printDoc(type){
+  calcAll();buildPreviews();
+  const st=STM[gv('q-progress')]||STM.draft;
+  const base=`font-family:'Noto Sans JP',sans-serif;color:#111;`;
+  let html='';
+  if(type==='customer'){
+    html=`<style>body{${base}} table{width:100%;border-collapse:collapse;font-size:11px;margin-bottom:10px} th{background:#f3f4f6;padding:4px 7px;border:1px solid #ccc;text-align:left} td{padding:4px 7px;border:1px solid #ddd} .r{text-align:right;font-family:monospace} h2{font-size:20px;font-weight:900;border-bottom:3px solid #c8940c;padding-bottom:5px;margin-bottom:8px} .meta{font-size:10px;color:#555;margin-bottom:10px;line-height:1.8} .note{font-size:10px;color:#888;margin-top:8px} .tr{font-weight:900;background:#f9fafb}</style>
+    <h2>見　積　書</h2><div class="meta">見積No.：${editingId||'—'} ／ 見積日：${gv('q-date')} ／ 有効期限：${gv('q-expire')}<br>顧客：<b>${gv('q-cust')}</b> ／ 担当：${gv('q-staff')} ／ 承認状況：${st.l}</div>
+    <table><tr><th>品番・品名</th><th class="r" style="width:70px">数量</th><th class="r" style="width:100px">単価（税抜）</th><th class="r" style="width:110px">金額（税抜）</th></tr>
+    <tr><td>${gv('q-part')}</td><td class="r">${gv('q-qty')}個</td><td class="r">${fmt(LAST.up||0)}</td><td class="r">${fmt(LAST.ft||0)}</td></tr>
+    <tr><td colspan="3" class="r" style="font-size:10px;color:#555">消費税（${gv('tax-rate')}%）</td><td class="r">${fmt(LAST.ta||0)}</td></tr>
+    <tr class="tr"><td colspan="3" class="r">合計（税込）</td><td class="r" style="color:#c8940c;font-size:14px">${fmt((LAST.ft||0)+(LAST.ta||0))}</td></tr></table>
+    ${gv('q-note')?`<p class="note">備考：${gv('q-note')}</p>`:''}
+    <p class="note">※本見積もりは税抜き表示です。有効期限：${gv('q-expire')}</p>`;
+  } else if(type==='internal'){
+    const pr=(LAST.pd||[]).map(p=>`<tr><td>${p.name}</td><td>${p.kind==='machine'?'機械加工':'外注'}</td><td class="r">${fmt(p.cost)}</td><td class="r">${((p.cost/(LAST.mfg||1))*100).toFixed(1)}%</td></tr>`).join('');
+    html=`<style>body{${base}} table{width:100%;border-collapse:collapse;font-size:11px;margin-bottom:10px} th{background:#f3f4f6;padding:4px 7px;border:1px solid #ccc;text-align:left} td{padding:4px 7px;border:1px solid #ddd} .r{text-align:right;font-family:monospace} h2{font-size:18px;font-weight:900;border-bottom:3px solid #16a34a;color:#16a34a;padding-bottom:5px;margin-bottom:8px} .meta{font-size:10px;color:#555;margin-bottom:10px;line-height:1.8} .note{font-size:10px;color:#888;margin-top:8px} .tr{font-weight:900;background:#f9fafb}</style>
+    <h2>社内原価表　【機密】</h2><div class="meta">No.：${editingId||'—'} ／ ${gv('q-part')} ／ ${gv('q-cust')} ／ ${gv('q-qty')}個 ／ 担当：${gv('q-staff')}<br>承認状況：<b>${st.l}</b>${gv('appr-name')?' ／ 承認者：'+gv('appr-name')+' '+gv('appr-date'):''}${gv('appr-comment')?'<br>コメント：'+gv('appr-comment'):''}</div>
+    <table><tr><th>費目</th><th class="r" style="width:110px">金額（1個）</th><th class="r" style="width:60px">構成比</th></tr>
+    ${(LAST.segs||[]).map(s=>`<tr><td>${s.l}</td><td class="r">${fmt(s.v)}</td><td class="r">${(s.v/(LAST.mfg||1)*100).toFixed(1)}%</td></tr>`).join('')}
+    <tr class="tr"><td>製造原価合計</td><td class="r">${fmt(LAST.mfg||0)}</td><td class="r">—</td></tr>
+    <tr><td>利益（${Math.round((LAST.pr||0)*100)}%）</td><td class="r" style="color:#16a34a;font-weight:700">${fmt(LAST.profit||0)}</td><td class="r">—</td></tr>
+    <tr class="tr"><td style="color:#c8940c">見積単価（税抜）</td><td class="r" style="color:#c8940c">${fmt(LAST.up||0)}</td><td class="r">—</td></tr></table>
+    ${pr?`<table><tr><th>工程名</th><th>種別</th><th class="r" style="width:100px">費用/個</th><th class="r" style="width:60px">構成比</th></tr>${pr}</table>`:''}
+    <p class="note">※本資料は社内原価資料です。顧客への開示は禁止です。製造部・品質保証部・生産管理共通資料。</p>`;
+  } else {
+    const mr=machines.map(m=>{const mt=MT.find(t=>t.v===m.type)||MT[7];return`<tr><td>${m.name}</td><td>${mt.l}</td><td class="r">${m.chargeH.toLocaleString()}円/h</td></tr>`;}).join('');
+    const or=outsources.map(o=>{const ot=OT.find(t=>t.v===o.type)||OT[5];const ul=UT.find(t=>t.v===o.unitType)?.l||'円/個';return`<tr><td>${o.name}</td><td>${ot.l}</td><td>${ul}</td><td class="r">${o.unitPrice.toLocaleString()}${ul}</td></tr>`;}).join('');
+    html=`<style>body{${base}} table{width:100%;border-collapse:collapse;font-size:11px;margin-bottom:10px} th{background:#f3f4f6;padding:4px 7px;border:1px solid #ccc;text-align:left} td{padding:4px 7px;border:1px solid #ddd} .r{text-align:right;font-family:monospace} h2{font-size:18px;font-weight:900;border-bottom:3px solid #2563eb;color:#2563eb;padding-bottom:5px;margin-bottom:8px} .meta{font-size:10px;color:#555;margin-bottom:10px;line-height:1.8} .note{font-size:10px;color:#888;margin-top:8px}</style>
+    <h2>マスタ一覧</h2><div class="meta">出力日：${new Date().toLocaleDateString('ja-JP')} ／ 管理費率：${document.getElementById('mgmt-rate')?.value||15}% ／ 目標利益率：${document.getElementById('target-profit')?.value||20}% ／ 消費税率：${document.getElementById('tax-rate')?.value||10}%</div>
+    <p style="font-weight:700;margin-bottom:4px">■ 機械マスタ（${machines.length}台）</p>
+    <table><tr><th>機械名</th><th>種別</th><th class="r" style="width:130px">時間チャージ</th></tr>${mr}</table>
+    <p style="font-weight:700;margin-bottom:4px">■ 外注マスタ（${outsources.length}件）</p>
+    <table><tr><th>工程名</th><th>種別</th><th>単価種別</th><th class="r" style="width:130px">単価</th></tr>${or}</table>
+    <p class="note">※本資料はシステムマスタ設定の参照用です。変更時は管理者に連絡してください。</p>`;
+  }
+  document.getElementById('print-area').innerHTML=html;window.print();
+}
+
+// ══ INIT ══
+function init(){
+  const today=new Date().toISOString().split('T')[0];
+  document.getElementById('q-date').value=today;
+  const exp=new Date();exp.setMonth(exp.getMonth()+1);
+  document.getElementById('q-expire').value=exp.toISOString().split('T')[0];
+  document.getElementById('appr-date').value=today;
+  renderMachines();renderOutsources();renderUsers();renderProcs();
+  // サンプルデータ
+  quotes=[
+    {id:'Q0001',customer:'ABC製作所',part:'BRK-001 / ブラケット',qty:1000,staff:'山田 太郎',date:'2026-04-01',expire:'2026-05-01',note:'',progress:'approved',finalTotal:285000,unitPrice:285,profitRate:0.22,mfgCost:222300,apprName:'鈴木 部長',apprDate:'2026-04-03',apprComment:'承認。コスト管理良好。'},
+    {id:'Q0002',customer:'XYZ工業',part:'FRM-012 / フレーム',qty:500,staff:'山田 太郎',date:'2026-04-05',expire:'2026-05-05',note:'急ぎ対応',progress:'pending',finalTotal:420000,unitPrice:840,profitRate:0.20,mfgCost:336000,apprName:'',apprDate:'',apprComment:''},
+    {id:'Q0003',customer:'DEF電機',part:'PNL-033 / パネル',qty:2000,staff:'田中 花子',date:'2026-04-10',expire:'2026-05-10',note:'',progress:'rejected',finalTotal:180000,unitPrice:90,profitRate:0.08,mfgCost:165600,apprName:'鈴木 部長',apprDate:'2026-04-11',apprComment:'利益率が低すぎます。再検討してください。'},
+    {id:'Q0004',customer:'GHI自動車',part:'MTG-044 / マウント',qty:5000,staff:'田中 花子',date:'2026-04-15',expire:'2026-05-15',note:'',progress:'sent',finalTotal:950000,unitPrice:190,profitRate:0.25,mfgCost:712500,apprName:'鈴木 部長',apprDate:'2026-04-16',apprComment:''},
+    {id:'Q0005',customer:'JKL部品',part:'CVR-055 / カバー',qty:300,staff:'山田 太郎',date:'2026-04-20',expire:'2026-05-20',note:'',progress:'draft',finalTotal:96000,unitPrice:320,profitRate:0.18,mfgCost:78720,apprName:'',apprDate:'',apprComment:''},
+  ];
+  qSeq=6;
+  currentUser=users[0];
+  const av=document.getElementById('nav-avatar');
+  av.textContent=currentUser.name[0];
+  document.getElementById('nav-uname').textContent=currentUser.name;
+  updateKPIs();renderList();updateApprPanel();
+}
+init();
+</script>
+</body>
+</html>
